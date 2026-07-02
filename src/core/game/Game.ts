@@ -113,6 +113,7 @@ export enum GameType {
   Singleplayer = "Singleplayer",
   Public = "Public",
   Private = "Private",
+  Custom = "Custom",
 }
 export const isGameType = (value: unknown): value is GameType =>
   isEnumValue(GameType, value);

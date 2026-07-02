@@ -4,7 +4,7 @@ import WebSocket from "ws";
 import { z } from "zod";
 import { isAdminRole } from "../core/ApiSchemas";
 import { GameEnv } from "../core/configuration/Config";
-import { GameType } from "../core/game/Game";
+import { GameMode, GameType } from "../core/game/Game";
 import {
   ClientID,
   ClientMessageSchema,
@@ -16,6 +16,7 @@ import {
   GameStartInfoSchema,
   Intent,
   LiveStats,
+  OpenToPublicIntent,
   PlayerLiveStats,
   PlayerRecord,
   PublicGameType,
@@ -131,6 +132,11 @@ export class GameServer {
 
   private visibleAt?: number;
 
+  // When set, this private lobby is open for anyone to join via the custom list.
+  // Null means the lobby is closed to public. Once set to non-null at least once,
+  // gameConfig.gameType is permanently set to GameType.Custom.
+  private openCustomType: PublicGameType | null = null;
+
   constructor(
     public readonly id: string,
     readonly log_: Logger,
@@ -186,6 +192,9 @@ export class GameServer {
   public updateGameConfig(gameConfig: Partial<GameConfig>): void {
     if (gameConfig.gameMap !== undefined) {
       this.gameConfig.gameMap = gameConfig.gameMap;
+    }
+    if (gameConfig.useRandomMap !== undefined) {
+      this.gameConfig.useRandomMap = gameConfig.useRandomMap;
     }
     if (gameConfig.gameMapSize !== undefined) {
       this.gameConfig.gameMapSize = gameConfig.gameMapSize;
@@ -338,6 +347,48 @@ export class GameServer {
           return { status: 400, error: "cannot change a game to public" };
         }
         this.updateGameConfig(stamped.config);
+        // Keep openCustomType in sync with gameMode when open to public
+        if (
+          this.openCustomType !== null &&
+          stamped.config.gameMode !== undefined
+        ) {
+          this.openCustomType =
+            stamped.config.gameMode === GameMode.Team ? "team" : "ffa";
+        }
+        return { status: 200 };
+      }
+
+      case "open_to_public": {
+        if (stamped.clientID !== this.lobbyCreatorID) {
+          return {
+            status: 403,
+            error: "only the lobby creator can open lobby to public",
+          };
+        }
+        if (this.isPublic()) {
+          return {
+            status: 403,
+            error: "cannot open a system-managed public game to public",
+          };
+        }
+        if (this.hasStarted()) {
+          return {
+            status: 409,
+            error: "cannot change visibility after game has started",
+          };
+        }
+        const openIntent = stamped as StampedIntent & OpenToPublicIntent;
+        this.openCustomType = openIntent.publicGameType;
+        if (openIntent.publicGameType !== null) {
+          // Permanently mark as Custom once opened to public
+          this.gameConfig.gameType = GameType.Custom;
+          this.log.info(`Lobby opened to public`, {
+            gameID: this.id,
+            category: openIntent.publicGameType,
+          });
+        } else {
+          this.log.info(`Lobby closed to public`, { gameID: this.id });
+        }
         return { status: 200 };
       }
 
@@ -691,6 +742,9 @@ export class GameServer {
           this.log.info("Host left, closing lobby", {
             gameID: this.id,
           });
+          // Stop advertising the lobby publicly the moment the host leaves,
+          // otherwise it lingers in the open-custom list as a ghost lobby.
+          this.openCustomType = null;
           for (const c of [...this.activeClients]) {
             this.kickClient(c.clientID, KICK_REASON_HOST_LEFT);
           }
@@ -1087,8 +1141,13 @@ export class GameServer {
       gameConfig: this.gameConfig,
       startsAt: this.startsAt,
       serverTime: Date.now(),
-      publicGameType: this.publicGameType,
+      publicGameType: this.publicGameType ?? this.openCustomType ?? undefined,
+      openCustomType: this.openCustomType ?? undefined,
     };
+  }
+
+  public openCustomLobbyType(): PublicGameType | null {
+    return this.openCustomType;
   }
 
   // Maps each active client's publicId-based friends list to in-game

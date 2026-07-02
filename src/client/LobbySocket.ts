@@ -91,6 +91,7 @@ export class PublicLobbySocket {
         this.lastFull = {
           serverTime: message.serverTime,
           games: message.games,
+          openLobbies: message.openLobbies,
         };
         this.onLobbiesUpdate(this.lastFull);
         return;
@@ -117,6 +118,7 @@ export class PublicLobbySocket {
       this.lastFull = {
         serverTime: message.serverTime,
         games: patchedGames,
+        openLobbies: this.lastFull.openLobbies,
       };
       this.onLobbiesUpdate(this.lastFull);
     } catch (error) {

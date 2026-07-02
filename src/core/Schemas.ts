@@ -52,7 +52,8 @@ export type Intent =
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
-  | ToggleGameStartTimer;
+  | ToggleGameStartTimer
+  | OpenToPublicIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -89,6 +90,7 @@ export type UpdateGameConfigIntent = z.infer<
 export type ToggleGameStartTimer = z.infer<
   typeof ToggleGameStartTimerIntentSchema
 >;
+export type OpenToPublicIntent = z.infer<typeof OpenToPublicIntentSchema>;
 
 export type Turn = z.infer<typeof TurnSchema>;
 export type GameConfig = z.infer<typeof GameConfigSchema>;
@@ -178,6 +180,7 @@ export const GameInfoSchema = z.object({
   serverTime: z.number(),
   gameConfig: z.lazy(() => GameConfigSchema).optional(),
   publicGameType: PublicGameTypeSchema.optional(),
+  openCustomType: PublicGameTypeSchema.nullable().optional(),
 });
 
 export const PublicGameInfoSchema = z.object({
@@ -191,6 +194,7 @@ export const PublicGameInfoSchema = z.object({
 export const PublicGamesSchema = z.object({
   serverTime: z.number(),
   games: z.record(PublicGameTypeSchema, z.array(PublicGameInfoSchema)),
+  openLobbies: z.array(PublicGameInfoSchema).optional(),
 });
 
 // Wire message sent from server to lobby WebSocket clients.
@@ -200,6 +204,7 @@ export const PublicLobbyFullSchema = z.object({
   type: z.literal("full"),
   serverTime: z.number(),
   games: z.record(PublicGameTypeSchema, z.array(PublicGameInfoSchema)),
+  openLobbies: z.array(PublicGameInfoSchema).optional(),
 });
 
 export const PublicLobbyCountsSchema = z.object({
@@ -300,6 +305,7 @@ export const GameConfigSchema = z.object({
   nameRevealPublicIds: z.string().array().max(200).optional(),
   waterNukes: z.boolean().nullable().optional(),
   randomSpawn: z.boolean(),
+  useRandomMap: z.boolean().optional(),
   maxPlayers: z.number().optional(),
   // OFM: allowlist of publicIds allowed to join (admin-only, see create_game).
   allowedPublicIds: z.array(z.string()).max(200).optional(),
@@ -513,6 +519,12 @@ export const ToggleGameStartTimerIntentSchema = z.object({
   type: z.literal("toggle_game_start_timer"),
 });
 
+export const OpenToPublicIntentSchema = z.object({
+  type: z.literal("open_to_public"),
+  // null closes the lobby to public; non-null opens it under the given category
+  publicGameType: PublicGameTypeSchema.nullable(),
+});
+
 export const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -539,6 +551,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,
   ToggleGameStartTimerIntentSchema,
+  OpenToPublicIntentSchema,
 ]);
 
 // StampedIntent = Intent with server-stamped clientID (used in turns and execution)

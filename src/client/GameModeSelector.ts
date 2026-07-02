@@ -96,6 +96,13 @@ export class GameModeSelector extends LitElement {
         detail: { payload: lobbies },
       }),
     );
+    const joinModal = document.querySelector(
+      "join-lobby-modal",
+    ) as JoinLobbyModal | null;
+    if (joinModal) {
+      joinModal.openLobbies = lobbies.openLobbies ?? [];
+    }
+
     this.requestUpdate();
 
     const allGames = Object.values(lobbies.games ?? {}).flat();

@@ -23,6 +23,7 @@ import {
   GameConfig,
   Intent,
   LiveStats,
+  PublicGameType,
   ServerMessage,
   ServerMessageSchema,
   Winner,
@@ -183,6 +184,10 @@ export class SendToggleGameStartTimer implements GameEvent {
   constructor() {}
 }
 
+export class SendOpenToPublicIntentEvent implements GameEvent {
+  constructor(public readonly publicGameType: PublicGameType | null) {}
+}
+
 export class Transport {
   private socket: WebSocket | null = null;
 
@@ -276,6 +281,10 @@ export class Transport {
 
     this.eventBus.on(SendToggleGameStartTimer, (e) =>
       this.onSendToggleGameStartTimer(e),
+    );
+
+    this.eventBus.on(SendOpenToPublicIntentEvent, (e) =>
+      this.onSendOpenToPublicIntent(e),
     );
   }
 
@@ -668,6 +677,13 @@ export class Transport {
 
   private onSendToggleGameStartTimer(event: SendToggleGameStartTimer) {
     this.sendIntent({ type: "toggle_game_start_timer" });
+  }
+
+  private onSendOpenToPublicIntent(event: SendOpenToPublicIntentEvent) {
+    this.sendIntent({
+      type: "open_to_public",
+      publicGameType: event.publicGameType,
+    });
   }
 
   private sendIntent(intent: Intent) {

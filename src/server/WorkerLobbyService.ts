@@ -110,7 +110,27 @@ export class WorkerLobbyService {
           publicGameType: gi.publicGameType!,
         } satisfies PublicGameInfo;
       });
-    process.send?.({ type: "lobbyList", lobbies } satisfies WorkerLobbyList);
+    const openLobbies = this.gm
+      .openCustomLobbies()
+      .map((g) => g.gameInfo())
+      .filter(
+        (gi) => gi.openCustomType !== null && gi.openCustomType !== undefined,
+      )
+      .map((gi) => {
+        return {
+          gameID: gi.gameID,
+          numClients: gi.clients?.length ?? 0,
+          startsAt: gi.startsAt,
+          gameConfig: gi.gameConfig,
+          publicGameType: gi.openCustomType!,
+        } satisfies PublicGameInfo;
+      });
+
+    process.send?.({
+      type: "lobbyList",
+      lobbies,
+      openLobbies,
+    } satisfies WorkerLobbyList);
   }
 
   private setupUpgradeHandler() {
@@ -139,6 +159,7 @@ export class WorkerLobbyService {
           type: "full",
           serverTime: this.lastPublicGames.serverTime,
           games: this.lastPublicGames.games,
+          openLobbies: this.lastPublicGames.openLobbies,
         } satisfies PublicLobbyMessage);
         ws.send(fullJson);
       }
@@ -174,7 +195,11 @@ export class WorkerLobbyService {
       }
     }
     gameIds.sort();
-    const fingerprint = gameIds.join(",");
+    const openIds = (publicGames.openLobbies ?? [])
+      .map((l) => l.gameID)
+      .sort()
+      .join("|");
+    const fingerprint = gameIds.join(",") + ";" + openIds;
     const shouldSendFull = fingerprint !== this.lastFullGameIds;
 
     let payload: PublicLobbyMessage;
@@ -183,6 +208,7 @@ export class WorkerLobbyService {
         type: "full",
         serverTime: publicGames.serverTime,
         games: publicGames.games,
+        openLobbies: publicGames.openLobbies,
       };
       this.lastFullGameIds = fingerprint;
     } else {

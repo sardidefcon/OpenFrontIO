@@ -97,6 +97,7 @@ export class HostLobbyModal extends BaseModal {
   @state() private hostCheatStartingGold: boolean = false;
   @state() private hostCheatStartingGoldValue: number | undefined = undefined;
   @state() private lobbyCreatorClientID: string = "";
+  @state() private openToPublicType: "ffa" | "team" | "special" | null = null;
   @state() private lobbyStartAt: number | null = null;
   @state() private serverTimeOffset: number = 0;
 
@@ -122,6 +123,8 @@ export class HostLobbyModal extends BaseModal {
     if (lobby.clients) {
       this.clients = lobby.clients;
     }
+    this.openToPublicType =
+      (lobby.openCustomType as "ffa" | "team" | "special" | null) ?? null;
   };
 
   private getRandomString(): string {
@@ -477,6 +480,8 @@ export class HostLobbyModal extends BaseModal {
             .nameReveals=${this.nameReveals}
             .anonymizeNames=${this.anonymizeNames}
           ></lobby-player-view>
+
+          ${this.renderOpenToPublicSection()}
         </div>
 
         <!-- Player List / footer -->
@@ -550,6 +555,71 @@ export class HostLobbyModal extends BaseModal {
     );
   }
 
+  private renderOpenToPublicSection() {
+    return html`
+      <div class="mt-10 pt-6 border-t border-white/10">
+        <div class="flex flex-col gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-widest">
+              ${translateText("host_modal.open_to_public_title")}
+            </h3>
+            <p class="text-xs text-white/50 mt-1">
+              ${translateText("host_modal.open_to_public_desc")}
+            </p>
+          </div>
+
+          ${this.openToPublicType !== null
+            ? html`
+                <div
+                  class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-green-500/30 bg-green-500/10"
+                >
+                  <span
+                    class="text-sm font-bold text-green-400 uppercase tracking-widest"
+                  >
+                    ${translateText("host_modal.open_to_public_active")}
+                  </span>
+                  <button
+                    class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                    @click=${this.closeToPublic}
+                  >
+                    ${translateText("host_modal.close_to_public_button")}
+                  </button>
+                </div>
+              `
+            : html`
+                <button
+                  class="w-full py-3 text-sm font-bold uppercase tracking-widest text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-all"
+                  @click=${this.openToPublic}
+                >
+                  ${translateText("host_modal.open_button")}
+                </button>
+              `}
+        </div>
+      </div>
+    `;
+  }
+
+  private openToPublic() {
+    const publicGameType = this.gameMode === GameMode.Team ? "team" : "ffa";
+    this.dispatchEvent(
+      new CustomEvent("open-to-public", {
+        detail: { publicGameType },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private closeToPublic() {
+    this.dispatchEvent(
+      new CustomEvent("open-to-public", {
+        detail: { publicGameType: null },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   public confirmBeforeClose(): boolean | Promise<boolean> {
     return this.confirmClose(translateText("host_modal.leave_confirmation"));
   }
@@ -615,6 +685,7 @@ export class HostLobbyModal extends BaseModal {
     this.hostCheatGoldMultiplierValue = undefined;
     this.hostCheatStartingGold = false;
     this.hostCheatStartingGoldValue = undefined;
+    this.openToPublicType = null;
 
     this.leaveLobbyOnClose = true;
   }
@@ -1056,6 +1127,7 @@ export class HostLobbyModal extends BaseModal {
         detail: {
           config: {
             gameMap: this.selectedMap,
+            useRandomMap: this.useRandomMap,
             gameMapSize: this.compactMap
               ? GameMapSize.Compact
               : GameMapSize.Normal,

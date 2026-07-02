@@ -53,6 +53,7 @@ import { TerritoryPatternsModal } from "./TerritoryPatternsModal";
 import { TokenLoginModal } from "./TokenLoginModal";
 import {
   SendKickPlayerIntentEvent,
+  SendOpenToPublicIntentEvent,
   SendToggleGameStartTimer,
   SendUpdateGameConfigIntentEvent,
 } from "./Transport";
@@ -232,6 +233,7 @@ declare global {
     userMeResponse: CustomEvent<UserMeResponse | false>;
     "leave-lobby": CustomEvent;
     "update-game-config": CustomEvent;
+    "open-to-public": CustomEvent<{ publicGameType: string | null }>;
   }
 }
 
@@ -386,6 +388,10 @@ class Client {
     document.addEventListener(
       "update-game-config",
       this.handleUpdateGameConfig.bind(this),
+    );
+    document.addEventListener(
+      "open-to-public",
+      this.handleOpenToPublic.bind(this),
     );
     document.addEventListener(
       "open-matchmaking",
@@ -1024,6 +1030,23 @@ class Client {
     if (this.eventBus) {
       this.eventBus.emit(new SendUpdateGameConfigIntentEvent(config));
     }
+  }
+
+  private handleOpenToPublic(
+    event: CustomEvent<{ publicGameType: string | null }>,
+  ) {
+    if (!this.eventBus) return;
+    const raw = event.detail.publicGameType;
+    const validTypes = ["ffa", "team", "special"] as const;
+    const isValid =
+      raw === null || (validTypes as readonly string[]).includes(raw);
+    if (!isValid) {
+      console.error(`[open-to-public] invalid publicGameType: ${raw}`);
+      return;
+    }
+    this.eventBus.emit(
+      new SendOpenToPublicIntentEvent(raw as "ffa" | "team" | "special" | null),
+    );
   }
 
   private async getTurnstileToken(

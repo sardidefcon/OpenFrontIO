@@ -534,6 +534,7 @@
   },
   "game_mode": {
     "ffa": "Free for All",
+    "team": "Teams",
     "teams": "Teams"
   },
   "game_starting_modal": {
@@ -729,6 +730,7 @@
     "assigned_teams": "Assigned Teams",
     "bots": "Tribes: ",
     "bots_disabled": "Disabled",
+    "close_to_public_button": "Close to Public",
     "compact_map": "Compact Map",
     "crowded": "Crowded modifier",
     "disable_alliances": "Disable alliances",
@@ -753,6 +755,10 @@
     "nation_players": "Nations",
     "nations": "Nations: ",
     "nations_disabled": "Disabled",
+    "open_button": "Open to Public",
+    "open_to_public_active": "Open to Public",
+    "open_to_public_desc": "Allow anyone to find and join this lobby from the main menu.",
+    "open_to_public_title": "Open to Public",
     "options_title": "Options",
     "player": "Player",
     "player_immunity_duration": "PVP immunity duration (minutes)",
@@ -772,7 +778,7 @@
     "teams_Humans Vs Nations": "Humans vs Nations",
     "teams_Quads": "Quads (teams of 4)",
     "teams_Trios": "Trios (teams of 3)",
-    "title": "Create Private Lobby",
+    "title": "Create Custom Lobby",
     "toggle_name_reveal": "Toggle whether this player can see real names",
     "waiting": "Waiting for players...",
     "water_nukes": "Water nukes"
@@ -789,6 +795,14 @@
     "step_scroll_and_tap": "Scroll down and tap",
     "step_share": "Tap the Share button in your browser",
     "text": "For fullscreen, add OpenFront to your Home Screen"
+  },
+  "join_lobby": {
+    "collapse": "Hide details",
+    "expand": "Show details",
+    "join_button": "Join",
+    "no_custom_options": "Default Settings",
+    "no_open_custom_lobbies": "No open custom lobbies at the moment.",
+    "open_custom_section_title": "Open Custom Lobbies"
   },
   "kick_reason": {
     "admin": "Kicked by an admin",
@@ -1162,7 +1176,7 @@
     "not_found": "Lobby not found. Please check the ID and try again.",
     "pvp_immunity": "PVP immunity duration",
     "starting_gold": "Starting Gold",
-    "title": "Join Private Lobby",
+    "title": "Join Custom Lobby",
     "version_mismatch": "This game was created with a different version. Cannot join."
   },
   "public_game_modifier": {
@@ -1354,6 +1368,12 @@
     "port": "Port",
     "sam_launcher": "SAM Launcher",
     "warship": "Warship"
+  },
+  "units": {
+    "million_short": "M",
+    "minute": "min",
+    "minute_short": "m",
+    "second_short": "s"
   },
   "user_setting": {
     "alert_frame_desc": "Toggle the alert frame. When enabled, the frame will be displayed when you are betrayed or attacked over land.",
